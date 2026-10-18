@@ -121,7 +121,19 @@ pip install -r requirements.txt
 python -m sourcebound
 ```
 
-Open <http://127.0.0.1:8000>, click **Load sample library**, pick a suggested question and press **Research**.
+**Windows (PowerShell)** — run one line at a time (Windows PowerShell 5 does not support `&&`):
+
+```powershell
+git clone https://github.com/pvc2000-creator/sourcebound.git
+cd sourcebound
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m sourcebound
+```
+
+If creating a virtual environment is not allowed on your machine, install for your user instead: `python -m pip install --user -r requirements.txt`, then `python -m sourcebound`. Use `python -m pip` rather than `pip` — it works even where `pip.exe` is blocked by an application-control policy.
+
+Open <http://127.0.0.1:8000>, click **Load sample library**, pick a suggested question and press **Research**. Stop the server with `Ctrl+C`.
 
 Options:
 
@@ -260,6 +272,9 @@ Report vulnerabilities privately: see [SECURITY.md](SECURITY.md).
 | Symptom | Fix |
 | --- | --- |
 | `Configuration error: …` at start-up | The message names the variable; fix or unset it. With nothing set, the app runs in extractive mode. |
+| `The token '&&' is not a valid statement separator` | You are in Windows PowerShell 5. Run the commands one per line (see the Windows instructions above). |
+| `pip.exe` blocked by an application control policy | Use `python -m pip install ...` instead of `pip install ...`. |
+| `No module named sourcebound` | Run the command from inside the cloned `sourcebound` folder, after installing the requirements. |
 | `Address already in use` | Another program uses port 8000: `python -m sourcebound --port 8080`. |
 | "No selectable text was found in this PDF" | The PDF is scanned. Run OCR (e.g. `ocrmypdf in.pdf out.pdf`) and upload the result. |
 | "Links to private, local or reserved network addresses are not allowed" | By design. Only public web pages can be added; upload internal documents as files instead. |

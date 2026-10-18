@@ -15,6 +15,16 @@ pip install -r requirements.txt
 python -m sourcebound
 ```
 
+On **Windows PowerShell**, run one command per line (`&&` is not supported in Windows PowerShell 5) and call pip through Python:
+
+```powershell
+git clone https://github.com/pvc2000-creator/sourcebound.git
+cd sourcebound
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m sourcebound
+```
+
 Open <http://127.0.0.1:8000>. The database is created at `data/sourcebound.db`.
 
 ## Configuration
