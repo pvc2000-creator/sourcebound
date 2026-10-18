@@ -1,0 +1,45 @@
+[project]
+name = "sourcebound"
+version = "0.1.0"
+description = "A research agent that answers questions only from the sources you give it, with checked citations and conflict detection."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "Prashant (pvc2000-creator)" }]
+dependencies = [
+  "starlette>=0.40,<2",
+  "uvicorn>=0.30,<1",
+  "python-multipart>=0.0.18",
+  "pypdf>=5,<7",
+]
+
+[project.urls]
+Repository = "https://github.com/pvc2000-creator/sourcebound"
+
+[tool.ruff]
+line-length = 140
+target-version = "py311"
+extend-exclude = ["screenshots"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "BLE", "RUF"]
+ignore = [
+  "S101",   # assert is fine in tests
+  "S310",   # urllib URLs are validated (netfetch) or operator-configured (llm)
+  "RUF001", "RUF002", "RUF003",  # typographic quotes and dashes are intentional in user-facing text
+  "E501",   # long string literals are clearer than wrapped ones here
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S104", "S105", "S106", "S108", "B023", "BLE001"]
+"scripts/**" = ["S603"]
+
+[tool.mypy]
+python_version = "3.12"
+packages = ["sourcebound"]
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = ["pypdf.*", "uvicorn.*"]
+ignore_missing_imports = true
