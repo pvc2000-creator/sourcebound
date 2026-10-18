@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sourcebound — research your own sources</title>
+  <meta name="description" content="A research agent that answers questions only from the documents you give it, with checked citations and conflict detection.">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script type="module" src="/static/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#question">Skip to the question</a>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><rect x="5" y="4" width="18" height="24" rx="2"/><path d="M9 11h10M9 15h10M9 19h6"/><rect class="hl" x="8" y="13.5" width="12" height="3" rx="1"/></svg>
+      <div>
+        <span class="brand-name">Sourcebound</span>
+        <span class="brand-tag">Answers only from the sources you give it</span>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="engine-pill" id="engine-pill">Checking engine…</span>
+      <button type="button" class="btn ghost" id="open-settings">Settings</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="rail" aria-labelledby="library-heading">
+      <section class="library" id="library">
+        <div class="rail-head">
+          <h2 id="library-heading">Your sources <span class="count" id="source-count"></span></h2>
+        </div>
+        <div class="add-row">
+          <label class="btn small" for="file-input">Upload files</label>
+          <input id="file-input" class="visually-hidden" type="file" multiple accept=".pdf,.txt,.md,.markdown,.html,.htm">
+          <button type="button" class="btn small" id="open-paste">Paste text</button>
+          <button type="button" class="btn small" id="open-url">Add link</button>
+        </div>
+        <p class="hint">PDF, TXT, Markdown or HTML. Drop files anywhere on this panel.</p>
+        <div class="drop-overlay" id="drop-overlay" aria-hidden="true">Drop to add sources</div>
+        <div id="source-empty" class="empty" hidden>
+          <p>Your library is empty. Add the documents you want answers from, or try the sample library: four short documents about a fictional town's library renovation.</p>
+          <button type="button" class="btn" id="load-sample">Load sample library</button>
+        </div>
+        <ul class="source-list" id="source-list" aria-label="Sources"></ul>
+      </section>
+
+      <section class="history" aria-labelledby="history-heading">
+        <h2 id="history-heading">Past reports</h2>
+        <p class="hint" id="history-empty">Reports you run appear here.</p>
+        <ul class="history-list" id="history-list"></ul>
+      </section>
+    </aside>
+
+    <main class="main" id="main">
+      <form class="composer" id="composer" novalidate>
+        <label for="question" class="composer-label">What do you want to find out?</label>
+        <textarea id="question" name="question" rows="3" maxlength="500" required
+          placeholder="e.g. How much will the renovation cost, and do the documents agree?"></textarea>
+        <div class="composer-foot">
+          <p class="scope" id="scope-note">Add a source to start.</p>
+          <div class="composer-actions">
+            <label class="toggle" id="llm-toggle-wrap" hidden>
+              <input type="checkbox" id="use-llm"> <span>Write with AI model</span>
+            </label>
+            <button type="submit" class="btn primary" id="run-btn">Research</button>
+          </div>
+        </div>
+        <p class="field-error" id="question-error" role="alert"></p>
+        <div class="samples" id="samples" hidden>
+          <span class="samples-label">Try:</span>
+          <div class="sample-chips" id="sample-chips"></div>
+        </div>
+      </form>
+
+      <div class="status-line" id="status-line" role="status" aria-live="polite"></div>
+
+      <section class="intro" id="intro">
+        <h1>Ask a question. Get an answer you can check.</h1>
+        <ol class="how">
+          <li><strong>Plan.</strong> Your question is split into focused sub-questions.</li>
+          <li><strong>Search.</strong> Each one is searched across your sources; weak searches are rephrased and retried.</li>
+          <li><strong>Cross-check.</strong> Figures that disagree between sources are flagged.</li>
+          <li><strong>Verify.</strong> Every sentence in the answer is tied to a quote you can open.</li>
+        </ol>
+        <p class="intro-note">Nothing leaves this server unless you add a web link or the operator connects an AI model.</p>
+      </section>
+
+      <section class="run" id="run" hidden aria-labelledby="run-question">
+        <div class="run-head">
+          <h1 id="run-question"></h1>
+          <div class="run-meta" id="run-meta"></div>
+        </div>
+        <div id="progress" class="progress" hidden>
+          <h2 class="sub">Agent log</h2>
+          <ol class="log" id="progress-log"></ol>
+        </div>
+        <div id="report" class="report" hidden>
+          <div class="verdict" id="verdict"></div>
+          <div class="toolbar" role="toolbar" aria-label="Report actions">
+            <button type="button" class="btn small" id="copy-md">Copy as Markdown</button>
+            <button type="button" class="btn small" id="dl-md">Download .md</button>
+            <button type="button" class="btn small" id="dl-json">Download .json</button>
+            <button type="button" class="btn small danger-text" id="delete-run">Delete report</button>
+          </div>
+          <div id="sections"></div>
+          <section id="conflicts" class="conflicts" hidden aria-labelledby="conflicts-heading">
+            <h2 id="conflicts-heading">Sources disagree</h2>
+            <ul id="conflict-list"></ul>
+          </section>
+          <section id="removed" class="removed" hidden aria-labelledby="removed-heading">
+            <h2 id="removed-heading">Removed during verification</h2>
+            <ul id="removed-list"></ul>
+          </section>
+          <section class="limits" aria-labelledby="limits-heading">
+            <h2 id="limits-heading">Limitations</h2>
+            <ul id="limit-list"></ul>
+          </section>
+          <section class="cited" aria-labelledby="cited-heading">
+            <h2 id="cited-heading">Evidence cited</h2>
+            <ol id="citation-list" class="citation-list"></ol>
+          </section>
+          <details class="trace">
+            <summary>How the agent worked <span id="trace-summary"></span></summary>
+            <ol class="log" id="trace-log"></ol>
+          </details>
+        </div>
+        <div id="run-error" class="run-error" hidden role="alert"></div>
+      </section>
+    </main>
+
+    <aside class="drawer" id="drawer" hidden aria-labelledby="drawer-title" tabindex="-1">
+      <div class="drawer-head">
+        <h2 id="drawer-title">Evidence</h2>
+        <button type="button" class="btn ghost small" id="close-drawer">Close</button>
+      </div>
+      <p class="drawer-source" id="drawer-source"></p>
+      <blockquote class="drawer-context" id="drawer-context"></blockquote>
+    </aside>
+  </div>
+
+  <dialog id="paste-dialog" aria-labelledby="paste-title">
+    <form method="dialog" id="paste-form" novalidate>
+      <h2 id="paste-title">Paste text as a source</h2>
+      <label for="paste-name">Title</label>
+      <input id="paste-name" maxlength="120" placeholder="e.g. Interview notes, 3 May">
+      <label for="paste-text">Text</label>
+      <textarea id="paste-text" rows="10" required></textarea>
+      <p class="field-error" id="paste-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Add source</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="url-dialog" aria-labelledby="url-title">
+    <form method="dialog" id="url-form" novalidate>
+      <h2 id="url-title">Add a public web page</h2>
+      <label for="url-input">Link</label>
+      <input id="url-input" type="url" inputmode="url" placeholder="https://" required>
+      <p class="hint">Public pages and PDFs only. Pages that ask automated tools not to read them (robots.txt) are skipped.</p>
+      <p class="field-error" id="url-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn ghost" data-close>Cancel</button>
+        <button type="submit" class="btn primary">Add page</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="settings-dialog" aria-labelledby="settings-title">
+    <div class="settings">
+      <h2 id="settings-title">Settings and data</h2>
+      <h3>Answer engine</h3>
+      <p id="settings-engine"></p>
+      <h3>What is stored</h3>
+      <p>Your sources, their text and your reports are stored on this server's database under a random workspace key kept in this browser. Anyone with that key could read them; it is never shown on screen. <span id="settings-retention"></span></p>
+      <h3>Delete everything</h3>
+      <p>Removes all your sources and reports from the server and starts a new workspace.</p>
+      <p class="field-error" id="settings-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button type="button" class="btn danger" id="delete-all">Delete all my data</button>
+        <button type="button" class="btn primary" data-close>Done</button>
+      </div>
+    </div>
+  </dialog>
+</body>
+</html>
