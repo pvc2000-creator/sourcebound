@@ -1,0 +1,5 @@
+-r requirements.txt
+# Quality tools and browser tests.
+ruff==0.16.8
+mypy==2.3.1
+playwright==1.56.0
